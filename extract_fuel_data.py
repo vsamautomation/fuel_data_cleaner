@@ -1,7 +1,7 @@
 """
 Complete Fuel Data Extraction
-Extracts READINGS, TANK SIZES, INV SETTINGS, and SALES (actual) from Google Sheets
-Outputs 4 CSV files in long format (tidy data)
+Extracts READINGS, LOADS, TANK SIZES, INV SETTINGS, and SALES (actual) from Google Sheets
+Outputs 5 CSV files in long format (tidy data)
 
 Usage:
     python extract_fuel_data.py
@@ -132,6 +132,89 @@ def extract_site_readings(df, site_row, site_name, date_columns):
                         record[f'Tank_{tank_num}_Reading'] = None
                 else:
                     record[f'Tank_{tank_num}_Reading'] = None
+            
+            records.append(record)
+    
+    return records
+
+
+def extract_site_loads(df, site_row, site_name, date_columns):
+    """Extract loads (fuel deliveries) for a single site"""
+    print(f"  Extracting LOADS for {site_name}...")
+    
+    # Find LOADS section
+    loads_start_row = None
+    loads_end_row = None
+    
+    for offset in range(30):
+        row_idx = site_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        if "LOADS" in section_label.upper():
+            loads_start_row = row_idx + 1
+            break
+    
+    if loads_start_row is None:
+        return []
+    
+    # Find end of LOADS section
+    for offset in range(15):
+        row_idx = loads_start_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        if any(keyword in section_label.upper() for keyword in ['SALES', 'CARRIER', 'NOTES', 'PROJECTED', 'ACTUAL']):
+            loads_end_row = row_idx
+            break
+    
+    if loads_end_row is None:
+        loads_end_row = loads_start_row + 10
+    
+    # Scan LOADS section
+    records = []
+    products_found = {}
+    
+    for row_idx in range(loads_start_row, loads_end_row):
+        if row_idx >= len(df):
+            break
+        
+        product_cell = df.iloc[row_idx, 4]
+        
+        if pd.notna(product_cell):
+            product = str(product_cell).strip()
+            
+            if product in ['87', '91', 'dsl']:
+                if product not in products_found:
+                    products_found[product] = []
+                
+                products_found[product].append(row_idx)
+    
+    # Extract loads for each date
+    for col_idx, date in date_columns:
+        for product, row_indices in products_found.items():
+            record = {
+                'Date': date.strftime('%Y-%m-%d'),
+                'Site': site_name,
+                'Product': product
+            }
+            
+            for tank_num, row_idx in enumerate(row_indices, start=1):
+                value = df.iloc[row_idx, col_idx]
+                
+                if pd.notna(value):
+                    try:
+                        clean_val = str(value).replace(',', '').strip()
+                        numeric_val = float(clean_val) if clean_val else None
+                        record[f'Tank_{tank_num}_Load'] = numeric_val
+                    except:
+                        record[f'Tank_{tank_num}_Load'] = None
+                else:
+                    record[f'Tank_{tank_num}_Load'] = None
             
             records.append(record)
     
@@ -438,6 +521,7 @@ def main():
     print('='*80)
     
     all_readings = []
+    all_loads = []
     all_tank_sizes = []
     all_inv_settings = []
     all_sales_actual = []
@@ -449,6 +533,11 @@ def main():
         readings = extract_site_readings(df, site_row, site_name, all_dates)
         all_readings.extend(readings)
         print(f"    ✓ {len(readings)} reading records")
+        
+        # Extract loads
+        loads = extract_site_loads(df, site_row, site_name, all_dates)
+        all_loads.extend(loads)
+        print(f"    ✓ {len(loads)} load records")
         
         # Extract tank sizes
         tank_sizes = extract_site_tank_sizes(df, site_row, site_name)
@@ -479,7 +568,16 @@ def main():
         print(f"✓ READINGS: {readings_file}")
         print(f"  {len(df_readings)} records | {df_readings['Date'].min()} to {df_readings['Date'].max()}")
     
-    # 2. TANK SIZES
+    # 2. LOADS
+    df_loads = pd.DataFrame(all_loads)
+    if not df_loads.empty:
+        df_loads = df_loads.sort_values(['Date', 'Site', 'Product'])
+        loads_file = os.path.join(output_dir, 'fuel_loads.csv')
+        df_loads.to_csv(loads_file, index=False)
+        print(f"✓ LOADS: {loads_file}")
+        print(f"  {len(df_loads)} records | {df_loads['Date'].min()} to {df_loads['Date'].max()}")
+    
+    # 3. TANK SIZES
     df_tank_sizes = pd.DataFrame(all_tank_sizes)
     if not df_tank_sizes.empty:
         df_tank_sizes = df_tank_sizes.sort_values(['Site', 'Product', 'Tank_Number'])
@@ -488,7 +586,7 @@ def main():
         print(f"✓ TANK SIZES: {tank_sizes_file}")
         print(f"  {len(df_tank_sizes)} records | {df_tank_sizes[df_tank_sizes['Is_Total']==True].shape[0]} totals")
     
-    # 3. INV SETTINGS
+    # 4. INV SETTINGS
     df_inv_settings = pd.DataFrame(all_inv_settings)
     if not df_inv_settings.empty:
         df_inv_settings = df_inv_settings.sort_values(['Site', 'Product', 'Tank_Number'])
@@ -497,7 +595,7 @@ def main():
         print(f"✓ INV SETTINGS: {inv_settings_file}")
         print(f"  {len(df_inv_settings)} records | {df_inv_settings[df_inv_settings['Is_Total']==True].shape[0]} totals")
     
-    # 4. SALES ACTUAL
+    # 5. SALES ACTUAL
     df_sales_actual = pd.DataFrame(all_sales_actual)
     if not df_sales_actual.empty:
         df_sales_actual = df_sales_actual.sort_values(['Date', 'Site', 'Product'])
@@ -512,6 +610,7 @@ def main():
     print('='*80)
     print(f"Sites processed: {len(sites)}")
     print(f"Total readings: {len(df_readings):,}")
+    print(f"Total loads: {len(df_loads):,}")
     print(f"Total tank sizes: {len(df_tank_sizes)}")
     print(f"Total inv settings: {len(df_inv_settings)}")
     print(f"Total sales actual: {len(df_sales_actual):,}")
