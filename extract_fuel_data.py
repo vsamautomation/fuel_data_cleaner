@@ -1,7 +1,7 @@
 """
 Complete Fuel Data Extraction
-Extracts READINGS, TANK SIZES, and INV SETTINGS from Google Sheets
-Outputs 3 CSV files in long format (tidy data)
+Extracts READINGS, TANK SIZES, INV SETTINGS, and SALES (actual) from Google Sheets
+Outputs 4 CSV files in long format (tidy data)
 
 Usage:
     python extract_fuel_data.py
@@ -33,22 +33,25 @@ def fetch_data():
 
 
 def get_all_dates(df, start_col=6):
-    """Extract all date columns from the sheet"""
+    """Extract all date columns from the sheet (up to today only)"""
     print("\nExtracting all dates...")
     dates_row = df.iloc[0, start_col:]
+    
+    today = pd.Timestamp.now().normalize()  # Get today's date at midnight
     
     date_data = []
     for col_idx, date_val in enumerate(dates_row, start=start_col):
         if pd.notna(date_val):
             try:
                 parsed = pd.to_datetime(str(date_val), format='%b-%d-%y', errors='coerce')
-                if parsed:
+                if parsed and parsed <= today:  # Only include dates up to today
                     date_data.append((col_idx, parsed))
             except:
                 pass
     
-    print(f"✓ Found {len(date_data)} dates")
-    print(f"  Date range: {date_data[0][1].date()} to {date_data[-1][1].date()}")
+    print(f"✓ Found {len(date_data)} dates (up to today)")
+    if date_data:
+        print(f"  Date range: {date_data[0][1].date()} to {date_data[-1][1].date()}")
     return date_data
 
 
@@ -221,6 +224,91 @@ def extract_site_tank_sizes(df, site_row, site_name):
     return records
 
 
+def extract_site_sales_actual(df, site_row, site_name, date_columns):
+    """Extract actual sales for a single site"""
+    print(f"  Extracting SALES (actual) for {site_name}...")
+    
+    # Find SALES (actual) section
+    sales_start_row = None
+    
+    for offset in range(40):
+        row_idx = site_row + offset
+        if row_idx >= len(df):
+            break
+        
+        col1_label = str(df.iloc[row_idx, 1]).strip() if pd.notna(df.iloc[row_idx, 1]) else ""
+        col3_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        # Look for SALES (actual) specifically, not SALES (projected)
+        if "SALES" in col1_label.upper() and "ACTUAL" in col1_label.upper():
+            sales_start_row = row_idx
+            break
+        elif "ACTUAL" in col3_label.upper() and "SALES" in col1_label.upper():
+            sales_start_row = row_idx
+            break
+    
+    if sales_start_row is None:
+        return []
+    
+    # Extract products in SALES (actual) section
+    records = []
+    products_found = {}
+    
+    for row_idx in range(sales_start_row, sales_start_row + 10):
+        if row_idx >= len(df):
+            break
+        
+        product_cell = df.iloc[row_idx, 4]
+        
+        if pd.notna(product_cell):
+            product = str(product_cell).strip()
+            
+            # Get base product (87, 91, dsl) - include totals
+            base_product = None
+            is_total = False
+            
+            if "87" in product:
+                base_product = '87'
+                is_total = "total" in product.lower()
+            elif "91" in product:
+                base_product = '91'
+                is_total = "total" in product.lower()
+            elif "dsl" in product.lower():
+                base_product = 'dsl'
+                is_total = "total" in product.lower()
+            
+            if base_product:
+                products_found[product] = {
+                    'row_idx': row_idx,
+                    'base_product': base_product,
+                    'is_total': is_total
+                }
+    
+    # Extract sales for each date
+    for col_idx, date in date_columns:
+        for product_key, product_info in products_found.items():
+            row_idx = product_info['row_idx']
+            value = df.iloc[row_idx, col_idx]
+            
+            if pd.notna(value):
+                try:
+                    clean_val = str(value).replace(',', '').strip()
+                    sales_val = float(clean_val) if clean_val else None
+                    
+                    if sales_val is not None:
+                        records.append({
+                            'Date': date.strftime('%Y-%m-%d'),
+                            'Site': site_name,
+                            'Product': product_info['base_product'],
+                            'Sales_Actual': sales_val,
+                            'Is_Total': product_info['is_total']
+                        })
+                except:
+                    pass
+    
+    return records
+
+
 def extract_site_inv_settings(df, site_row, site_name):
     """Extract inventory settings for a single site"""
     print(f"  Extracting INV SETTINGS for {site_name}...")
@@ -352,6 +440,7 @@ def main():
     all_readings = []
     all_tank_sizes = []
     all_inv_settings = []
+    all_sales_actual = []
     
     for site_row, site_name in sites:
         print(f"\n{site_name}:")
@@ -370,6 +459,11 @@ def main():
         inv_settings = extract_site_inv_settings(df, site_row, site_name)
         all_inv_settings.extend(inv_settings)
         print(f"    ✓ {len(inv_settings)} inv setting records")
+        
+        # Extract sales actual
+        sales_actual = extract_site_sales_actual(df, site_row, site_name, all_dates)
+        all_sales_actual.extend(sales_actual)
+        print(f"    ✓ {len(sales_actual)} sales actual records")
     
     # Convert to DataFrames and export
     print(f"\n{'='*80}")
@@ -403,6 +497,15 @@ def main():
         print(f"✓ INV SETTINGS: {inv_settings_file}")
         print(f"  {len(df_inv_settings)} records | {df_inv_settings[df_inv_settings['Is_Total']==True].shape[0]} totals")
     
+    # 4. SALES ACTUAL
+    df_sales_actual = pd.DataFrame(all_sales_actual)
+    if not df_sales_actual.empty:
+        df_sales_actual = df_sales_actual.sort_values(['Date', 'Site', 'Product'])
+        sales_actual_file = os.path.join(output_dir, 'sales_actual.csv')
+        df_sales_actual.to_csv(sales_actual_file, index=False)
+        print(f"✓ SALES ACTUAL: {sales_actual_file}")
+        print(f"  {len(df_sales_actual)} records | {df_sales_actual['Date'].min()} to {df_sales_actual['Date'].max()}")
+    
     # Summary
     print(f"\n{'='*80}")
     print("✅ EXTRACTION COMPLETE!")
@@ -411,6 +514,7 @@ def main():
     print(f"Total readings: {len(df_readings):,}")
     print(f"Total tank sizes: {len(df_tank_sizes)}")
     print(f"Total inv settings: {len(df_inv_settings)}")
+    print(f"Total sales actual: {len(df_sales_actual):,}")
     print(f"\nAll files saved to: {os.path.abspath(output_dir)}")
     print("\n🎯 Data is now in long format (tidy) and ready for analysis!")
 

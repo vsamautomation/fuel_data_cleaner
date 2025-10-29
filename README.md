@@ -8,10 +8,11 @@ This tool automatically:
 - Fetches data from your published Google Sheets in real-time
 - Identifies all 26+ fuel sites dynamically (no manual configuration needed)
 - Extracts 672 dates of historical data (March 2024 - January 2026)
-- Outputs 3 CSV files ready for Excel forecasting:
+- Outputs 4 CSV files ready for Excel forecasting:
   - `fuel_readings.csv` - Daily tank readings (~45,000+ records)
   - `tank_sizes.csv` - Tank capacities (~95 records)
   - `inv_settings.csv` - Desired inventory levels (~99 records)
+  - `sales_actual.csv` - Actual sales data (~35,000+ records)
 
 ## Quick Start
 
@@ -85,6 +86,14 @@ Desired inventory levels for efficient operations.
 |------|---------|-------------|---------------|----------|
 | OLD Morongo | 87 | 1 | 15000 | False |
 | OLD Morongo | 87 | 0 | 30000 | True |
+
+### sales_actual.csv
+Actual daily sales for all sites and products.
+
+| Date | Site | Product | Sales_Actual | Is_Total |
+|------|------|---------|--------------|----------|
+| 2024-03-01 | OLD Morongo | 87 | 32348 | False |
+| 2024-03-01 | OLD Morongo | 91 | 5808 | False |
 
 ## Building Windows Executable (Optional)
 
