@@ -29,13 +29,13 @@ python -m pip install --quiet pandas requests
 
 echo.
 echo Starting extraction...
-echo Output location: %USERPROFILE%\Desktop\fuel_data
+echo Output location: Current directory
 echo.
 echo This may take 30-60 seconds. Please wait...
 echo.
 
 REM Run the extractor
-python extract_fuel_data.py -o "%USERPROFILE%\Desktop\fuel_data"
+python extract_fuel_data.py
 
 if errorlevel 1 (
     echo.
@@ -48,7 +48,7 @@ if errorlevel 1 (
     echo ================================================================================
     echo SUCCESS! Data extracted successfully.
     echo.
-    echo Files saved to: %USERPROFILE%\Desktop\fuel_data
+    echo Files saved to: %CD%
     echo.
     echo You can now open these CSV files in Excel.
     echo ================================================================================
