@@ -14,6 +14,8 @@ from io import StringIO
 from datetime import datetime
 import argparse
 import os
+
+from validators import base16
 from site_identifier import identify_sites
 
 # Configuration
@@ -105,7 +107,7 @@ def extract_site_readings(df, site_row, site_name, date_columns):
         if pd.notna(product_cell):
             product = str(product_cell).strip()
             
-            if product in ['87', '91', 'dsl']:
+            if product in ['87', '88', '91', 'dsl', 'racing', 'red']:
                 if product not in products_found:
                     products_found[product] = []
                 
@@ -206,15 +208,21 @@ def extract_site_loads(df, site_row, site_name, date_columns):
         if pd.notna(product_cell):
             product = str(product_cell).strip()
             
-            # Get base product (87, 91, dsl)
+            # Get base product (87, 88, racing, red 91, dsl)
             base_product = None
             
             if "87" in product:
-                base_product = '87'
+                base_product = product
+            elif "88" in product:
+                base_product = product
             elif "91" in product:
-                base_product = '91'
+                base_product = product
             elif "dsl" in product.lower():
-                base_product = 'dsl'
+                base_product = product
+            elif "racing" in product.lower():
+                base_product = product
+            elif "red" in product.lower():
+                base_product = product
             
             # Capture all product rows (prefer total if exists, otherwise take the row)
             if base_product:
@@ -290,11 +298,17 @@ def extract_site_tank_sizes(df, site_row, site_name):
             # Extract base product
             base_product = None
             if "87" in product:
-                base_product = '87'
+                base_product = product
+            elif "88" in product:
+                base_product = product
             elif "91" in product:
-                base_product = '91'
+                base_product = product
             elif "dsl" in product.lower():
-                base_product = 'dsl'
+                base_product = product
+            elif "racing" in product.lower():
+                base_product = product
+            elif "red" in product.lower():
+                base_product = product
             
             if base_product:
                 try:
@@ -370,21 +384,33 @@ def extract_site_sales_actual(df, site_row, site_name, date_columns):
         
         if pd.notna(product_cell):
             product = str(product_cell).strip()
-            
-            # Get base product (87, 91, dsl) - include totals
+            if "READING" in product.upper():
+                # print(f"    Reached end of products at row {row_idx}.")
+                break
+            # Get base product (87, 88, racing, red, 91, dsl) - include totals
             base_product = None
             is_total = False
             
             if "87" in product:
-                base_product = '87'
+                base_product = product
+                is_total = "total" in product.lower()
+            elif "88" in product:
+                base_product = product
                 is_total = "total" in product.lower()
             elif "91" in product:
-                base_product = '91'
+                base_product = product
                 is_total = "total" in product.lower()
             elif "dsl" in product.lower():
-                base_product = 'dsl'
+                base_product = product
                 is_total = "total" in product.lower()
-            
+            elif "racing" in product.lower():
+                base_product = product
+                is_total = "total" in product.lower()
+            elif "red" in product.lower():
+                base_product = product
+                is_total = "total" in product.lower()
+
+
             if base_product:
                 products_found[product] = {
                     'row_idx': row_idx,
@@ -460,11 +486,17 @@ def extract_site_inv_settings(df, site_row, site_name):
             # Extract base product
             base_product = None
             if "87" in product:
-                base_product = '87'
+                base_product = product
+            elif "88" in product:   
+                base_product = product
             elif "91" in product:
-                base_product = '91'
+                base_product = product
             elif "dsl" in product.lower():
-                base_product = 'dsl'
+                base_product = product
+            elif "racing" in product.lower():
+                base_product = product
+            elif "red" in product.lower():
+                base_product = product
             
             if base_product:
                 try:
