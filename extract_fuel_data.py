@@ -142,10 +142,8 @@ def extract_site_loads(df, site_row, site_name, date_columns):
     """Extract loads (fuel deliveries) for a single site"""
     print(f"  Extracting LOADS for {site_name}...")
     
-    # Find LOADS section
-    loads_start_row = None
-    loads_end_row = None
-    
+    # First, find ULLAGE section
+    ullage_row = None
     for offset in range(30):
         row_idx = site_row + offset
         if row_idx >= len(df):
@@ -153,29 +151,49 @@ def extract_site_loads(df, site_row, site_name, date_columns):
         
         section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
         
+        if "ULLAGE" in section_label.upper():
+            ullage_row = row_idx
+            break
+    
+    if ullage_row is None:
+        return []
+    
+    # Now find LOADS section AFTER ullage
+    loads_start_row = None
+    loads_end_row = None
+    
+    for offset in range(1, 20):  # Start searching after ullage
+        row_idx = ullage_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
         if "LOADS" in section_label.upper():
-            loads_start_row = row_idx + 1
+            loads_start_row = row_idx
             break
     
     if loads_start_row is None:
         return []
     
     # Find end of LOADS section
-    for offset in range(15):
+    for offset in range(1, 15):
         row_idx = loads_start_row + offset
         if row_idx >= len(df):
             break
         
         section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        col1_label = str(df.iloc[row_idx, 1]).strip() if pd.notna(df.iloc[row_idx, 1]) else ""
         
-        if any(keyword in section_label.upper() for keyword in ['SALES', 'CARRIER', 'NOTES', 'PROJECTED', 'ACTUAL']):
+        if any(keyword in section_label.upper() for keyword in ['SALES', 'CARRIER', 'NOTES']) or \
+           any(keyword in col1_label.upper() for keyword in ['SALES', 'CARRIER']):
             loads_end_row = row_idx
             break
     
     if loads_end_row is None:
         loads_end_row = loads_start_row + 10
     
-    # Scan LOADS section
+    # Scan LOADS section - get product rows
     records = []
     products_found = {}
     
@@ -188,35 +206,42 @@ def extract_site_loads(df, site_row, site_name, date_columns):
         if pd.notna(product_cell):
             product = str(product_cell).strip()
             
-            if product in ['87', '91', 'dsl']:
-                if product not in products_found:
-                    products_found[product] = []
-                
-                products_found[product].append(row_idx)
+            # Get base product (87, 91, dsl)
+            base_product = None
+            
+            if "87" in product:
+                base_product = '87'
+            elif "91" in product:
+                base_product = '91'
+            elif "dsl" in product.lower():
+                base_product = 'dsl'
+            
+            # Capture all product rows (prefer total if exists, otherwise take the row)
+            if base_product:
+                is_total = "total" in product.lower()
+                # If we haven't seen this product yet, or this is a total row, store it
+                if base_product not in products_found or is_total:
+                    products_found[base_product] = row_idx
     
-    # Extract loads for each date
+    # Extract loads for each date (only totals)
     for col_idx, date in date_columns:
-        for product, row_indices in products_found.items():
-            record = {
-                'Date': date.strftime('%Y-%m-%d'),
-                'Site': site_name,
-                'Product': product
-            }
+        for product, row_idx in products_found.items():
+            value = df.iloc[row_idx, col_idx]
             
-            for tank_num, row_idx in enumerate(row_indices, start=1):
-                value = df.iloc[row_idx, col_idx]
-                
-                if pd.notna(value):
-                    try:
-                        clean_val = str(value).replace(',', '').strip()
-                        numeric_val = float(clean_val) if clean_val else None
-                        record[f'Tank_{tank_num}_Load'] = numeric_val
-                    except:
-                        record[f'Tank_{tank_num}_Load'] = None
-                else:
-                    record[f'Tank_{tank_num}_Load'] = None
-            
-            records.append(record)
+            if pd.notna(value):
+                try:
+                    clean_val = str(value).replace(',', '').strip()
+                    load_val = float(clean_val) if clean_val else None
+                    
+                    if load_val is not None:
+                        records.append({
+                            'Date': date.strftime('%Y-%m-%d'),
+                            'Site': site_name,
+                            'Product': product,
+                            'Load_Total': load_val
+                        })
+                except:
+                    pass
     
     return records
 
