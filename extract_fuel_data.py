@@ -107,7 +107,7 @@ def extract_site_readings(df, site_row, site_name, date_columns):
         if pd.notna(product_cell):
             product = str(product_cell).strip()
             
-            if product in ['87', '88', '91', 'dsl', 'racing', 'red']:
+            if any(key in product for key in ['87', '88', '91', 'dsl', 'racing', 'red']):
                 if product not in products_found:
                     products_found[product] = []
                 
@@ -139,6 +139,161 @@ def extract_site_readings(df, site_row, site_name, date_columns):
     
     return records
 
+def get_three_week_avg(df, site_row, site_name, all_dates):    
+    """Get 3-week average sales for a site"""
+    print(f" Getting 3-week average sales for {site_name}...")
+    avg_start_row = None
+    product_name = None
+    avg_end_row = None
+    for offset in range(200):
+        row_idx = site_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx-1, 3]).strip() if pd.notna(df.iloc[row_idx-1, 3]) else ""
+        avg_col = str(df.iloc[row_idx, 4]).strip() if pd.notna(df.iloc[row_idx, 4]) else ""
+
+
+        if "3 WK AVG" in avg_col.upper():
+            avg_start_row = row_idx + 1
+            break
+    
+    if avg_start_row is None:
+        return []
+
+    # Find end of Avg Section
+    for offset in range(200):
+        row_idx = avg_start_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        if any(keyword in section_label.upper() for keyword in ['ACTUAL']):
+            avg_end_row = row_idx
+            break
+    
+    if avg_end_row is None:
+        avg_end_row = avg_start_row + 100
+
+    records = []
+    products_found = {}
+
+    for row_idx in range(avg_start_row, avg_end_row):
+        if row_idx >= len(df):
+            break
+        
+        product_cell = df.iloc[row_idx-2, 4]
+        
+        if pd.notna(product_cell):
+            product = str(product_cell).strip()
+
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
+                if product not in products_found:
+                    products_found[product] = []
+                
+                products_found[product].append(row_idx)
+
+    for col_idx, date in all_dates:
+        for product, row_indices in products_found.items():
+            record = {
+                'Date': date.strftime('%Y-%m-%d'),
+                'Site': site_name,
+                'Product': product
+            }
+            for tank_num, row_idx in enumerate(row_indices, start=1):
+                value = df.iloc[row_idx-1, col_idx]
+                if pd.notna(value):
+                    try:
+                        clean_val = str(value).replace(',', '').strip()
+                        avg_val = float(clean_val) if clean_val else None
+                        record[f'Tank_{tank_num}_3_Week_Avg'] = avg_val
+                    except:
+                        record[f'Tank_{tank_num}_3_Week_Avg'] = None
+                else:
+                    record[f'Tank_{tank_num}_3_Week_Avg'] = None
+            
+            records.append(record)
+
+    return records
+
+def get_2_month_avg(df, site_row, site_name, all_dates):    
+    """Get 2-month average sales for a site"""
+    print(f" Getting 2-month average sales for {site_name}...")
+    avg_start_row = None
+    product_name = None
+    avg_end_row = None
+    for offset in range(200):
+        row_idx = site_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx-1, 3]).strip() if pd.notna(df.iloc[row_idx-1, 3]) else ""
+        avg_col = str(df.iloc[row_idx, 4]).strip() if pd.notna(df.iloc[row_idx, 4]) else ""
+
+
+        if "2 MO AVG" in avg_col.upper():
+            avg_start_row = row_idx + 1
+            break
+    
+    if avg_start_row is None:
+        return []
+
+    # Find end of Avg Section
+    for offset in range(200):
+        row_idx = avg_start_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        if any(keyword in section_label.upper() for keyword in ['ACTUAL']):
+            avg_end_row = row_idx
+            break
+    
+    if avg_end_row is None:
+        avg_end_row = avg_start_row + 100
+
+    records = []
+    products_found = {}
+
+    for row_idx in range(avg_start_row, avg_end_row):
+        if row_idx >= len(df):
+            break
+        
+        product_cell = df.iloc[row_idx-3, 4]
+        
+        if pd.notna(product_cell):
+            product = str(product_cell).strip()
+            
+            if any(key in product for key in ['87', '88', '91', 'dsl', 'racing', 'red']):
+                if product not in products_found:
+                    products_found[product] = []
+                
+                products_found[product].append(row_idx)
+
+    for col_idx, date in all_dates:
+        for product, row_indices in products_found.items():
+            record = {
+                'Date': date.strftime('%Y-%m-%d'),
+                'Site': site_name,
+                'Product': product
+            }
+            for tank_num, row_idx in enumerate(row_indices, start=1):
+                value = df.iloc[row_idx-1, col_idx]
+                if pd.notna(value):
+                    try:
+                        clean_val = str(value).replace(',', '').strip()
+                        avg_val = float(clean_val) if clean_val else None
+                        record[f'Tank_{tank_num}_2_Month_Avg'] = avg_val
+                    except:
+                        record[f'Tank_{tank_num}_2_Month_Avg'] = None
+                else:
+                    record[f'Tank_{tank_num}_2_Month_Avg'] = None
+
+            records.append(record)
+
+    return records
 
 def extract_site_loads(df, site_row, site_name, date_columns):
     """Extract loads (fuel deliveries) for a single site"""
@@ -210,18 +365,7 @@ def extract_site_loads(df, site_row, site_name, date_columns):
             
             # Get base product (87, 88, racing, red 91, dsl)
             base_product = None
-            
-            if "87" in product:
-                base_product = product
-            elif "88" in product:
-                base_product = product
-            elif "91" in product:
-                base_product = product
-            elif "dsl" in product.lower():
-                base_product = product
-            elif "racing" in product.lower():
-                base_product = product
-            elif "red" in product.lower():
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
                 base_product = product
             
             # Capture all product rows (prefer total if exists, otherwise take the row)
@@ -252,7 +396,6 @@ def extract_site_loads(df, site_row, site_name, date_columns):
                     pass
     
     return records
-
 
 def extract_site_tank_sizes(df, site_row, site_name):
     """Extract tank sizes for a single site"""
@@ -297,17 +440,7 @@ def extract_site_tank_sizes(df, site_row, site_name):
             
             # Extract base product
             base_product = None
-            if "87" in product:
-                base_product = product
-            elif "88" in product:
-                base_product = product
-            elif "91" in product:
-                base_product = product
-            elif "dsl" in product.lower():
-                base_product = product
-            elif "racing" in product.lower():
-                base_product = product
-            elif "red" in product.lower():
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
                 base_product = product
             
             if base_product:
@@ -346,101 +479,101 @@ def extract_site_tank_sizes(df, site_row, site_name):
     return records
 
 
-def extract_site_sales_actual(df, site_row, site_name, date_columns):
-    """Extract actual sales for a single site"""
-    print(f"  Extracting SALES (actual) for {site_name}...")
+# def extract_site_sales_actual(df, site_row, site_name, date_columns):
+#     """Extract actual sales for a single site"""
+#     print(f"  Extracting SALES (actual) for {site_name}...")
     
-    # Find SALES (actual) section
-    sales_start_row = None
+#     # Find SALES (actual) section
+#     sales_start_row = None
     
-    for offset in range(40):
-        row_idx = site_row + offset
-        if row_idx >= len(df):
-            break
+#     for offset in range(40):
+#         row_idx = site_row + offset
+#         if row_idx >= len(df):
+#             break
         
-        col1_label = str(df.iloc[row_idx, 1]).strip() if pd.notna(df.iloc[row_idx, 1]) else ""
-        col3_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+#         col1_label = str(df.iloc[row_idx, 1]).strip() if pd.notna(df.iloc[row_idx, 1]) else ""
+#         col3_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
         
-        # Look for SALES (actual) specifically, not SALES (projected)
-        if "SALES" in col1_label.upper() and "ACTUAL" in col1_label.upper():
-            sales_start_row = row_idx
-            break
-        elif "ACTUAL" in col3_label.upper() and "SALES" in col1_label.upper():
-            sales_start_row = row_idx
-            break
+#         # Look for SALES (actual) specifically, not SALES (projected)
+#         if "SALES" in col1_label.upper() and "ACTUAL" in col1_label.upper():
+#             sales_start_row = row_idx
+#             break
+#         elif "ACTUAL" in col3_label.upper() and "SALES" in col1_label.upper():
+#             sales_start_row = row_idx
+#             break
     
-    if sales_start_row is None:
-        return []
+#     if sales_start_row is None:
+#         return []
     
-    # Extract products in SALES (actual) section
-    records = []
-    products_found = {}
+#     # Extract products in SALES (actual) section
+#     records = []
+#     products_found = {}
     
-    for row_idx in range(sales_start_row, sales_start_row + 10):
-        if row_idx >= len(df):
-            break
+#     for row_idx in range(sales_start_row, sales_start_row + 10):
+#         if row_idx >= len(df):
+#             break
         
-        product_cell = df.iloc[row_idx, 4]
+#         product_cell = df.iloc[row_idx, 4]
         
-        if pd.notna(product_cell):
-            product = str(product_cell).strip()
-            if "READING" in product.upper():
-                # print(f"    Reached end of products at row {row_idx}.")
-                break
-            # Get base product (87, 88, racing, red, 91, dsl) - include totals
-            base_product = None
-            is_total = False
+#         if pd.notna(product_cell):
+#             product = str(product_cell).strip()
+#             if "READING" in product.upper():
+#                 # print(f"    Reached end of products at row {row_idx}.")
+#                 break
+#             # Get base product (87, 88, racing, red, 91, dsl) - include totals
+#             base_product = None
+#             is_total = False
             
-            if "87" in product:
-                base_product = product
-                is_total = "total" in product.lower()
-            elif "88" in product:
-                base_product = product
-                is_total = "total" in product.lower()
-            elif "91" in product:
-                base_product = product
-                is_total = "total" in product.lower()
-            elif "dsl" in product.lower():
-                base_product = product
-                is_total = "total" in product.lower()
-            elif "racing" in product.lower():
-                base_product = product
-                is_total = "total" in product.lower()
-            elif "red" in product.lower():
-                base_product = product
-                is_total = "total" in product.lower()
+#             if "87" in product:
+#                 base_product = product
+#                 is_total = "total" in product.lower()
+#             elif "88" in product:
+#                 base_product = product
+#                 is_total = "total" in product.lower()
+#             elif "91" in product:
+#                 base_product = product
+#                 is_total = "total" in product.lower()
+#             elif "dsl" in product.lower():
+#                 base_product = product
+#                 is_total = "total" in product.lower()
+#             elif "racing" in product.lower():
+#                 base_product = product
+#                 is_total = "total" in product.lower()
+#             elif "red" in product.lower():
+#                 base_product = product
+#                 is_total = "total" in product.lower()
 
 
-            if base_product:
-                products_found[product] = {
-                    'row_idx': row_idx,
-                    'base_product': base_product,
-                    'is_total': is_total
-                }
+#             if base_product:
+#                 products_found[product] = {
+#                     'row_idx': row_idx,
+#                     'base_product': base_product,
+#                     'is_total': is_total
+#                 }
     
-    # Extract sales for each date
-    for col_idx, date in date_columns:
-        for product_key, product_info in products_found.items():
-            row_idx = product_info['row_idx']
-            value = df.iloc[row_idx, col_idx]
+#     # Extract sales for each date
+#     for col_idx, date in date_columns:
+#         for product_key, product_info in products_found.items():
+#             row_idx = product_info['row_idx']
+#             value = df.iloc[row_idx, col_idx]
             
-            if pd.notna(value):
-                try:
-                    clean_val = str(value).replace(',', '').strip()
-                    sales_val = float(clean_val) if clean_val else None
+#             if pd.notna(value):
+#                 try:
+#                     clean_val = str(value).replace(',', '').strip()
+#                     sales_val = float(clean_val) if clean_val else None
                     
-                    if sales_val is not None:
-                        records.append({
-                            'Date': date.strftime('%Y-%m-%d'),
-                            'Site': site_name,
-                            'Product': product_info['base_product'],
-                            'Sales_Actual': sales_val,
-                            'Is_Total': product_info['is_total']
-                        })
-                except:
-                    pass
+#                     if sales_val is not None:
+#                         records.append({
+#                             'Date': date.strftime('%Y-%m-%d'),
+#                             'Site': site_name,
+#                             'Product': product_info['base_product'],
+#                             'Sales_Actual': sales_val,
+#                             'Is_Total': product_info['is_total']
+#                         })
+#                 except:
+#                     pass
     
-    return records
+#     return records
 
 
 def extract_site_inv_settings(df, site_row, site_name):
@@ -485,17 +618,7 @@ def extract_site_inv_settings(df, site_row, site_name):
             
             # Extract base product
             base_product = None
-            if "87" in product:
-                base_product = product
-            elif "88" in product:   
-                base_product = product
-            elif "91" in product:
-                base_product = product
-            elif "dsl" in product.lower():
-                base_product = product
-            elif "racing" in product.lower():
-                base_product = product
-            elif "red" in product.lower():
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
                 base_product = product
             
             if base_product:
@@ -582,7 +705,9 @@ def main():
     all_tank_sizes = []
     all_inv_settings = []
     all_sales_actual = []
-    
+    all_three_week_avg = []
+    all_2_month_avg = []
+
     for site_row, site_name in sites:
         print(f"\n{site_name}:")
         
@@ -606,11 +731,21 @@ def main():
         all_inv_settings.extend(inv_settings)
         print(f"    ✓ {len(inv_settings)} inv setting records")
         
-        # Extract sales actual
-        sales_actual = extract_site_sales_actual(df, site_row, site_name, all_dates)
-        all_sales_actual.extend(sales_actual)
-        print(f"    ✓ {len(sales_actual)} sales actual records")
-    
+        # # Extract sales actual
+        # sales_actual = extract_site_sales_actual(df, site_row, site_name, all_dates)
+        # all_sales_actual.extend(sales_actual)
+        # print(f"    ✓ {len(sales_actual)} sales actual records")
+
+        # Extract 3-week average
+        three_week_avg = get_three_week_avg(df, site_row, site_name, all_dates)
+        all_three_week_avg.extend(three_week_avg)
+        print(f"    ✓ {len(three_week_avg)} 3-week average records")
+
+        # Extract 2-month average
+        two_month_avg = get_2_month_avg(df, site_row, site_name, all_dates)
+        all_2_month_avg.extend(two_month_avg)
+        print(f"    ✓ {len(two_month_avg)} 2-month average records")
+
     # Convert to DataFrames and export
     print(f"\n{'='*80}")
     print("EXPORTING DATA")
@@ -652,15 +787,33 @@ def main():
         print(f"✓ INV SETTINGS: {inv_settings_file}")
         print(f"  {len(df_inv_settings)} records | {df_inv_settings[df_inv_settings['Is_Total']==True].shape[0]} totals")
     
-    # 5. SALES ACTUAL
-    df_sales_actual = pd.DataFrame(all_sales_actual)
-    if not df_sales_actual.empty:
-        df_sales_actual = df_sales_actual.sort_values(['Date', 'Site', 'Product'])
-        sales_actual_file = os.path.join(output_dir, 'sales_actual.csv')
-        df_sales_actual.to_csv(sales_actual_file, index=False)
-        print(f"✓ SALES ACTUAL: {sales_actual_file}")
-        print(f"  {len(df_sales_actual)} records | {df_sales_actual['Date'].min()} to {df_sales_actual['Date'].max()}")
+    # # 5. SALES ACTUAL
+    # df_sales_actual = pd.DataFrame(all_sales_actual)
+    # if not df_sales_actual.empty:
+    #     df_sales_actual = df_sales_actual.sort_values(['Date', 'Site', 'Product'])
+    #     sales_actual_file = os.path.join(output_dir, 'sales_actual.csv')
+    #     df_sales_actual.to_csv(sales_actual_file, index=False)
+    #     print(f"✓ SALES ACTUAL: {sales_actual_file}")
+    #     print(f"  {len(df_sales_actual)} records | {df_sales_actual['Date'].min()} to {df_sales_actual['Date'].max()}")
     
+    # 6. SALES 3-WEEK AVG
+    df_three_week_avg = pd.DataFrame(all_three_week_avg)
+    if not df_three_week_avg.empty:
+        df_three_week_avg = df_three_week_avg.sort_values(['Date', 'Site', 'Product'])
+        three_week_avg_file = os.path.join(output_dir, 'three_week_avg.csv')
+        df_three_week_avg.to_csv(three_week_avg_file, index=False)
+        print(f"✓ 3-WEEK AVERAGE: {three_week_avg_file}")
+        print(f"  {len(df_three_week_avg)} records | {df_three_week_avg['Date'].min()} to {df_three_week_avg['Date'].max()}")
+    
+    # 7. SALES 2-MONTH AVG
+    df_2_month_avg = pd.DataFrame(all_2_month_avg)
+    if not df_2_month_avg.empty:
+        df_2_month_avg = df_2_month_avg.sort_values(['Date', 'Site', 'Product'])
+        two_month_avg_file = os.path.join(output_dir, 'two_month_avg.csv')
+        df_2_month_avg.to_csv(two_month_avg_file, index=False)
+        print(f"✓ 2-MONTH AVERAGE: {two_month_avg_file}")
+        print(f"  {len(df_2_month_avg)} records | {df_2_month_avg['Date'].min()} to {df_2_month_avg['Date'].max()}")
+
     # Summary
     print(f"\n{'='*80}")
     print("✅ EXTRACTION COMPLETE!")
@@ -670,7 +823,9 @@ def main():
     print(f"Total loads: {len(df_loads):,}")
     print(f"Total tank sizes: {len(df_tank_sizes)}")
     print(f"Total inv settings: {len(df_inv_settings)}")
-    print(f"Total sales actual: {len(df_sales_actual):,}")
+    # print(f"Total sales actual: {len(df_sales_actual):,}")
+    print(f"Total 3-week averages: {len(df_three_week_avg):,}")
+    print(f"Total 2-month averages: {len(df_2_month_avg):,}")
     print(f"\nAll files saved to: {os.path.abspath(output_dir)}")
     print("\n🎯 Data is now in long format (tidy) and ready for analysis!")
 
