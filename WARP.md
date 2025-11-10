@@ -228,7 +228,7 @@ numeric_val = float(clean_val) if clean_val else None
 
 The Google Sheet URL is hardcoded in the scripts:
 ```python
-GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRpva-TXUaQR_6tJoXX2vnSN2ertC5GNxAgssqmXvIhqHBNrscDxSxtiSWbCiiHqAoSHb3SzXDQw_VX/pub?gid=1048590026&single=true&output=csv"
+GOOGLE_SHEET_URL = ""
 ```
 
 This must be a **published Google Sheets CSV** endpoint. To change the data source, update this constant in all relevant scripts.

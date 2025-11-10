@@ -1,0 +1,113 @@
+🚀 Initializing Fabric Workspace Analyzer...
+
+🚀 STARTING COMPLETE FABRIC WORKSPACE ANALYSIS
+================================================================================
+🔍 STEP 1: Discovering workspaces...
+  ✅ Found 4 workspaces
+
+🔍 STEP 2: Getting datasets and reports...
+  📦 Scanning workspace: Fabric_Demo
+  📦 Scanning workspace: BI_Metadata
+  📦 Scanning workspace: NLQ_Task
+  📦 Scanning workspace: Auto_DP
+  ✅ Found 8 datasets and 11 reports (7 PowerBI reports)
+
+🔍 STEP 3: Processing all datasets and aggregating objects...
+  📊 Processing dataset: LH_D365FNO
+    ⚠️ Dependencies unavailable for LH_D365FNO: The database is empty. The DISCOVER_CALC_DEPENDENCY operation cannot be performed on an empty database.
+    Found 0 expressions
+  📊 Processing dataset: NLQ_Model
+    Found 1 expressions
+    Found datsource for NLQ_Model
+  📊 Processing dataset: NLQ_Demo
+    Found 1 expressions
+    Found datsource for NLQ_Demo
+  📊 Processing dataset: IT Spend Analysis Sample PBIX
+    Found 0 expressions
+    Found datsource for IT Spend Analysis Sample PBIX
+  📊 Processing dataset: COVID Bakeoff
+    Found 8 expressions
+    Found datsource for COVID Bakeoff
+  📊 Processing dataset: Sales & Returns Sample v201912
+    Found 0 expressions
+    Found datsource for Sales & Returns Sample v201912
+  📊 Processing dataset: Sales & Returns Sample PBIX
+    Found 0 expressions
+    Found datsource for Sales & Returns Sample PBIX
+  📊 Processing dataset: COVID Bakeoff PBIR
+    Found 8 expressions
+    Found datsource for COVID Bakeoff PBIR
+  ✅ Processed 8 datasets
+    📋 Aggregated: 732 columns, 71 tables, 186 measures
+    🔗 Aggregated: 3148 dependencies, 58 relationships, 18 Expressions
+
+🔍 STEP 4: Extracting report metadata...
+  📊 Processing report 1/8: NLQ
+  📑 Report Type: PBIR-Legacy
+    ✅ Extracted via JSON: 0 tables, 0 columns, 0 measures
+  📊 Processing report 2/8: NLQ_Demo
+  📑 Report Type: PBIR-Legacy
+    ✅ Extracted via JSON: 2 tables, 4 columns, 1 measures
+  📊 Processing report 3/8: IT Spend Analysis Sample PBIX
+  📑 Report Type: PBIR-Legacy
+    ✅ Extracted via JSON: 8 tables, 11 columns, 5 measures
+  📊 Processing report 4/8: COVID Bakeoff
+  📑 Report Type: PBIR-Legacy
+    ✅ Extracted via JSON: 11 tables, 24 columns, 15 measures
+  📊 Processing report 5/8: Sales & Returns Sample v201912
+  📑 Report Type: PBIR
+    ✅ Extracted via sempy_labs: 14 tables, 42 columns, 24 measures
+  📊 Processing report 6/8: Sales & Returns Sample PBIX
+  📑 Report Type: PBIR-Legacy
+    ✅ Extracted via JSON: 22 tables, 37 columns, 21 measures
+  📊 Processing report 7/8: COVID Bakeoff PBIR
+  📑 Report Type: PBIR-Legacy
+  ✅ Saved 918 records to 'ai_object_features' table
+     📝 AI-ready object-level features with full lineage context for predictions
+
+🔗 Saving relationships table...
+  ✅ Saved 58 records to 'dataset_relationships' table
+     📝 All relationships across datasets with qualified column references
+
+🔗 Saving dependencies table...
+  ✅ Saved 3148 records to 'dataste_dependencies' table
+     📝 All dataset dependedncies for reference later
+
+📝 Saving expressions table...
+  ✅ Saved 18 records to 'dataset_expressions' table
+     📝 M code expressions from Power Query for all datasets
+
+✅ AI-optimized lakehouse tables created successfully!
+   📊 ai_dataset_context: 8 datasets with 16 features
+   📊 ai_object_features: 918 objects (columns + measures) with 23 features
+
+💡 Use these tables for:
+   - Training schema optimization models
+   - Predicting unused objects
+   - Generating dataset health scores
+   - Recommending model improvements
+
+================================================================================
+🎉 FABRIC WORKSPACE ANALYSIS COMPLETE!
+================================================================================
+⏱️ Total execution time: 233.94 seconds
+
+📊 Summary:
+  Workspaces analyzed: 4
+  Datasets processed: 8
+  Reports analyzed: 7
+  Total objects found: 732 columns, 71 tables, 186 measures
+  Used objects: 237 columns, 54 tables, 102 measures
+  Unused objects: 495 columns, 17 tables, 84 measures
+
+💾 All results saved to lakehouse tables!
+================================================================================
+
+🎉 Analysis complete! AI-optimized tables are ready.
+
+📊 Quick Access:
+  ai_datasets = spark.table('ai_dataset_context').toPandas()
+  ai_objects = spark.table('ai_object_features').toPandas()
+/opt/spark/python/lib/pyspark.zip/pyspark/sql/pandas/conversion.py:351: UserWarning: createDataFrame attempted Arrow optimization because 'spark.sql.execution.arrow.pyspark.enabled' is set to true; however, failed by the reason below:
+  Could not convert Series([], Name: datasource, dtype: object) with type Series: did not recognize Python value type when inferring an Arrow data type
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.

@@ -1,0 +1,67 @@
+[
+    {
+        "datasourceType": "Web",
+        "connectionDetails": {
+            "url": "http://countryflags.azurewebsites.net/"
+        },
+        "datasourceId": "443dfcf9-37d7-49af-b36a-212ea2bb1357",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "Web",
+        "connectionDetails": {
+            "url": "https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv"
+        },
+        "datasourceId": "2e1ebfcc-7ca9-4e2e-8b0f-de93d1d1eed0",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "File",
+        "connectionDetails": {
+            "path": "c:\\users\\willthom\\microsoft\\gartner data and analytics summit - bake-off\\acaps_covid19_government_measures_dataset.xlsx"
+        },
+        "datasourceId": "05811f55-3f20-4e1d-a456-3f8ff935ea5f",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "Web",
+        "connectionDetails": {
+            "url": "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/us_state_vaccinations.csv"
+        },
+        "datasourceId": "f9eba024-0d79-4bf8-b959-51417d17c9db",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "File",
+        "connectionDetails": {
+            "path": "c:\\users\\willthom\\microsoft\\gartner data and analytics summit - bake-off\\weo_history.txt"
+        },
+        "datasourceId": "71e4dcb1-7a98-4dcc-a304-2f8a38d0cba8",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "Sql",
+        "connectionDetails": {
+            "server": "dsna-researchlab-wcu-sqlserver.database.windows.net",
+            "database": "researchlab"
+        },
+        "datasourceId": "10d2eef5-1999-486f-9a01-3cfc2f0780da",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "Web",
+        "connectionDetails": {
+            "url": "https://simple.wikipedia.org/wiki/List_of_U.S._states_by_population"
+        },
+        "datasourceId": "d83bbf63-089a-43b0-b70e-c30524fd383e",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    },
+    {
+        "datasourceType": "Web",
+        "connectionDetails": {
+            "url": "https://covid.ourworldindata.org/data/owid-covid-data.csv"
+        },
+        "datasourceId": "d75f0a49-2ff3-4267-814e-25c07bb268aa",
+        "gatewayId": "3e982095-ac92-425b-89a1-06e4c08b3945"
+    }
+]
