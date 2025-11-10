@@ -9,7 +9,7 @@ from io import StringIO
 from datetime import datetime
 
 # Configuration
-GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRpva-TXUaQR_6tJoXX2vnSN2ertC5GNxAgssqmXvIhqHBNrscDxSxtiSWbCiiHqAoSHb3SzXDQw_VX/pub?gid=1048590026&single=true&output=csv"
+GOOGLE_SHEET_URL = ""
 OUTPUT_FILE = "Step2_Sept2025_Ullage.xlsx"
 
 # Site definitions: (row_index, site_name)
