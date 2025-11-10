@@ -168,7 +168,11 @@ def extract_site_readings(df, site_row, site_name, date_columns, city):
     
     return records
 
+<<<<<<< HEAD
 def get_three_week_avg(df, site_row, site_name, all_dates, city):    
+=======
+def get_three_week_avg(df, site_row, site_name, all_dates):    
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
     """Get 3-week average sales for a site"""
     print(f" Getting 3-week average sales for {site_name}...")
     avg_start_row = None
@@ -181,6 +185,151 @@ def get_three_week_avg(df, site_row, site_name, all_dates, city):
         
         section_label = str(df.iloc[row_idx-1, 3]).strip() if pd.notna(df.iloc[row_idx-1, 3]) else ""
         avg_col = str(df.iloc[row_idx, 4]).strip() if pd.notna(df.iloc[row_idx, 4]) else ""
+<<<<<<< HEAD
+=======
+
+
+        if "3 WK AVG" in avg_col.upper():
+            avg_start_row = row_idx + 1
+            break
+    
+    if avg_start_row is None:
+        return []
+
+    # Find end of Avg Section
+    for offset in range(200):
+        row_idx = avg_start_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        if any(keyword in section_label.upper() for keyword in ['ACTUAL']):
+            avg_end_row = row_idx
+            break
+    
+    if avg_end_row is None:
+        avg_end_row = avg_start_row + 100
+
+    records = []
+    products_found = {}
+
+    for row_idx in range(avg_start_row, avg_end_row):
+        if row_idx >= len(df):
+            break
+        
+        product_cell = df.iloc[row_idx-2, 4]
+        
+        if pd.notna(product_cell):
+            product = str(product_cell).strip()
+
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
+                if product not in products_found:
+                    products_found[product] = []
+                
+                products_found[product].append(row_idx)
+
+    for col_idx, date in all_dates:
+        for product, row_indices in products_found.items():
+            record = {
+                'Date': date.strftime('%Y-%m-%d'),
+                'Site': site_name,
+                'Product': product
+            }
+            for tank_num, row_idx in enumerate(row_indices, start=1):
+                value = df.iloc[row_idx-1, col_idx]
+                if pd.notna(value):
+                    try:
+                        clean_val = str(value).replace(',', '').strip()
+                        avg_val = float(clean_val) if clean_val else None
+                        record[f'Tank_{tank_num}_3_Week_Avg'] = avg_val
+                    except:
+                        record[f'Tank_{tank_num}_3_Week_Avg'] = None
+                else:
+                    record[f'Tank_{tank_num}_3_Week_Avg'] = None
+            
+            records.append(record)
+
+    return records
+
+def get_2_month_avg(df, site_row, site_name, all_dates):    
+    """Get 2-month average sales for a site"""
+    print(f" Getting 2-month average sales for {site_name}...")
+    avg_start_row = None
+    product_name = None
+    avg_end_row = None
+    for offset in range(200):
+        row_idx = site_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx-1, 3]).strip() if pd.notna(df.iloc[row_idx-1, 3]) else ""
+        avg_col = str(df.iloc[row_idx, 4]).strip() if pd.notna(df.iloc[row_idx, 4]) else ""
+
+
+        if "2 MO AVG" in avg_col.upper():
+            avg_start_row = row_idx + 1
+            break
+    
+    if avg_start_row is None:
+        return []
+
+    # Find end of Avg Section
+    for offset in range(200):
+        row_idx = avg_start_row + offset
+        if row_idx >= len(df):
+            break
+        
+        section_label = str(df.iloc[row_idx, 3]).strip() if pd.notna(df.iloc[row_idx, 3]) else ""
+        
+        if any(keyword in section_label.upper() for keyword in ['ACTUAL']):
+            avg_end_row = row_idx
+            break
+    
+    if avg_end_row is None:
+        avg_end_row = avg_start_row + 100
+
+    records = []
+    products_found = {}
+
+    for row_idx in range(avg_start_row, avg_end_row):
+        if row_idx >= len(df):
+            break
+        
+        product_cell = df.iloc[row_idx-3, 4]
+        
+        if pd.notna(product_cell):
+            product = str(product_cell).strip()
+            
+            if any(key in product for key in ['87', '88', '91', 'dsl', 'racing', 'red']):
+                if product not in products_found:
+                    products_found[product] = []
+                
+                products_found[product].append(row_idx)
+
+    for col_idx, date in all_dates:
+        for product, row_indices in products_found.items():
+            record = {
+                'Date': date.strftime('%Y-%m-%d'),
+                'Site': site_name,
+                'Product': product
+            }
+            for tank_num, row_idx in enumerate(row_indices, start=1):
+                value = df.iloc[row_idx-1, col_idx]
+                if pd.notna(value):
+                    try:
+                        clean_val = str(value).replace(',', '').strip()
+                        avg_val = float(clean_val) if clean_val else None
+                        record[f'Tank_{tank_num}_2_Month_Avg'] = avg_val
+                    except:
+                        record[f'Tank_{tank_num}_2_Month_Avg'] = None
+                else:
+                    record[f'Tank_{tank_num}_2_Month_Avg'] = None
+
+            records.append(record)
+
+    return records
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
 
 
         if "3 WK AVG" in avg_col.upper():
@@ -429,7 +578,11 @@ def extract_site_loads(df, site_row, site_name, date_columns, city):
     
     return records
 
+<<<<<<< HEAD
 def extract_site_tank_sizes(df, site_row, site_name, city):
+=======
+def extract_site_tank_sizes(df, site_row, site_name):
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
     """Extract tank sizes for a single site"""
     print(f"  Extracting TANK SIZES for {site_name}...")
     
@@ -470,12 +623,21 @@ def extract_site_tank_sizes(df, site_row, site_name, city):
         if pd.notna(tank_size) and pd.notna(product_cell):
             product = str(product_cell).strip()
             
+<<<<<<< HEAD
             # Check if this product is relevant
             if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
                 is_total = "total" in product.lower()
                 # Get base product name (without "total")
                 base_product = product.lower().replace("total", "").strip() if is_total else product
                 
+=======
+            # Extract base product
+            base_product = None
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
+                base_product = product
+            
+            if base_product:
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
                 try:
                     clean_val = str(tank_size).replace(',', '').strip()
                     size_val = float(clean_val) if clean_val else None
@@ -652,12 +814,21 @@ def extract_site_inv_settings(df, site_row, site_name, city):
         if pd.notna(desired_level) and pd.notna(product_cell):
             product = str(product_cell).strip()
             
+<<<<<<< HEAD
             # Check if this product is relevant
             if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
                 is_total = "total" in product.lower()
                 # Get base product name (without "total")
                 base_product = product.lower().replace("total", "").strip() if is_total else product
                 
+=======
+            # Extract base product
+            base_product = None
+            if any(keyword in product for keyword in ['87', '88', '91', 'dsl', 'racing', 'red']):
+                base_product = product
+            
+            if base_product:
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
                 try:
                     clean_val = str(desired_level).replace(',', '').strip()
                     level_val = float(clean_val) if clean_val else None
@@ -725,6 +896,7 @@ def main():
     all_sales_actual = []
     all_three_week_avg = []
     all_2_month_avg = []
+<<<<<<< HEAD
     
     # Process both sheets
     sheets_to_process = [
@@ -802,6 +974,46 @@ def main():
             two_month_avg = get_2_month_avg(df, site_row, site_name, all_dates, city_name)
             all_2_month_avg.extend(two_month_avg)
             print(f"    ✓ {len(two_month_avg)} 2-month average records")
+=======
+
+    for site_row, site_name in sites:
+        print(f"\n{site_name}:")
+        
+        # Extract readings
+        readings = extract_site_readings(df, site_row, site_name, all_dates)
+        all_readings.extend(readings)
+        print(f"    ✓ {len(readings)} reading records")
+        
+        # Extract loads
+        loads = extract_site_loads(df, site_row, site_name, all_dates)
+        all_loads.extend(loads)
+        print(f"    ✓ {len(loads)} load records")
+        
+        # Extract tank sizes
+        tank_sizes = extract_site_tank_sizes(df, site_row, site_name)
+        all_tank_sizes.extend(tank_sizes)
+        print(f"    ✓ {len(tank_sizes)} tank size records")
+        
+        # Extract inv settings
+        inv_settings = extract_site_inv_settings(df, site_row, site_name)
+        all_inv_settings.extend(inv_settings)
+        print(f"    ✓ {len(inv_settings)} inv setting records")
+        
+        # # Extract sales actual
+        # sales_actual = extract_site_sales_actual(df, site_row, site_name, all_dates)
+        # all_sales_actual.extend(sales_actual)
+        # print(f"    ✓ {len(sales_actual)} sales actual records")
+
+        # Extract 3-week average
+        three_week_avg = get_three_week_avg(df, site_row, site_name, all_dates)
+        all_three_week_avg.extend(three_week_avg)
+        print(f"    ✓ {len(three_week_avg)} 3-week average records")
+
+        # Extract 2-month average
+        two_month_avg = get_2_month_avg(df, site_row, site_name, all_dates)
+        all_2_month_avg.extend(two_month_avg)
+        print(f"    ✓ {len(two_month_avg)} 2-month average records")
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
 
     # Convert to DataFrames and export
     print(f"\n{'='*80}")
@@ -856,7 +1068,11 @@ def main():
     # 6. SALES 3-WEEK AVG
     df_three_week_avg = pd.DataFrame(all_three_week_avg)
     if not df_three_week_avg.empty:
+<<<<<<< HEAD
         df_three_week_avg = df_three_week_avg.sort_values(['Date', 'City', 'Site', 'Product'])
+=======
+        df_three_week_avg = df_three_week_avg.sort_values(['Date', 'Site', 'Product'])
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
         three_week_avg_file = os.path.join(output_dir, 'three_week_avg.csv')
         df_three_week_avg.to_csv(three_week_avg_file, index=False)
         print(f"✓ 3-WEEK AVERAGE: {three_week_avg_file}")
@@ -865,7 +1081,11 @@ def main():
     # 7. SALES 2-MONTH AVG
     df_2_month_avg = pd.DataFrame(all_2_month_avg)
     if not df_2_month_avg.empty:
+<<<<<<< HEAD
         df_2_month_avg = df_2_month_avg.sort_values(['Date', 'City', 'Site', 'Product'])
+=======
+        df_2_month_avg = df_2_month_avg.sort_values(['Date', 'Site', 'Product'])
+>>>>>>> 87e965b46c39f97ad5410632916b1d336604ff04
         two_month_avg_file = os.path.join(output_dir, 'two_month_avg.csv')
         df_2_month_avg.to_csv(two_month_avg_file, index=False)
         print(f"✓ 2-MONTH AVERAGE: {two_month_avg_file}")
